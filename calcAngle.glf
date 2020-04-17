@@ -2,6 +2,20 @@ package require PWI_Glyph
 
 set retValue [source [file join [file dirname [info script]] "/Users/ehereth/Projects/Glyph/GridCoordEnum/pwio.glf"]]
 
+# This procedure calculates the average of all points provided to it.
+proc getAveragePoint { points } {
+  set nPoints [llength $points]
+  set avg [pwu::Vector3 zero]
+  foreach p $points {
+    set pt [pwu::Vector3 set [lindex $p 0] [lindex $p 1] [lindex $p 2]]
+    set avg [pwu::Vector3 add $avg $pt]
+  }
+
+  set avg [pwu::Vector3 scale $avg [expr 1.0/$nPoints]]
+
+  return [list [pwu::Vector3 x $avg] [pwu::Vector3 y $avg] [pwu::Vector3 z $avg]]
+}
+
 
 # This creates both a hash/lookup table and a edge-to-node connectivity for all
 # the edges contained in the domain(s) provided in _facet_ order.
