@@ -2,6 +2,45 @@ package require PWI_Glyph
 
 set retValue [source [file join [file dirname [info script]] "/Users/ehereth/Projects/Glyph/GridCoordEnum/pwio.glf"]]
 
+
+# This creates both a hash/lookup table and a edge-to-node connectivity for all
+# the edges contained in the domain(s) provided in _facet_ order.
+proc createEdgeToNodeConnectivity { domains } {
+  #puts "Creating edge-to-node connectivity using: $domains."
+
+  # Using the pwio library internally, this may not be efficient if this is
+  # done in many other procedures too.
+  pwio::beginIO $domains
+
+  set edgeToNode [dict create]
+  set edgeToNodeHash [dict create]
+  set nEdges 1
+
+  set cellCount [pwio::getCellCount]
+
+  # Loop over facets and extract edges.
+  for {set f 1} {$f <= $cellCount} {incr f} {
+    set facet [pwio::getCell $f]
+    # This is in 'min' order to make it easier to identify unique edges.
+    set edges [pwio::getCellEdges $f cellVarName 1 revVarName]
+    #puts "facet $f: edges: $edges"
+
+    foreach edge $edges {
+      # Create unique edge identifier.
+      set edgeId "[lindex $edge 0]-[lindex $edge 1]"
+      # If this unique edge does not yet exist, create its hash and nade map.
+      if { ![dict exists $edgeToNodeHash $edgeId] } {
+        dict set edgeToNodeHash $edgeId $nEdges
+        dict set edgeToNode $nEdges [list [lindex $edge 0] [lindex $edge 1]]
+        set nEdges [expr $nEdges + 1]
+      }
+    }
+  }
+
+  pwio::endIO
+
+  return [list $edgeToNode $edgeToNodeHash]
+}
 proc createEdgeToCellConnectivity { domains } {
   #puts "Creating edge-to-cell connectivity using: $domains."
 
