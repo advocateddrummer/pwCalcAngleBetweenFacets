@@ -99,6 +99,26 @@ proc createEdgeToCellConnectivity { domains } {
   return $edgeToCell
 }
 
+proc createCellToCellConnectivity { domains } {
+  #puts "Creating cell-to-cell connectivity using: $domains."
+
+  # Start with edge-to-cell connectivity.
+  set edgeToCell [ createEdgeToCellConnectivity $domains ]
+
+  set cellToCell [dict create]
+
+  dict for {edge cellPair} $edgeToCell {
+    #puts "edge: $edge contains the cell pair: $cellPair"
+    set cell1 [lindex $cellPair 0]
+    set cell2 [lindex $cellPair 1]
+    dict lappend cellToCell $cell1 $cell2
+    dict lappend cellToCell $cell2 $cell1
+  }
+
+  #puts "cellToCell: $cellToCell"
+  return $cellToCell
+}
+
 # Create a domain selection mask.
 set mask [pw::Display createSelectionMask -requireDomain {}];
 
