@@ -41,15 +41,19 @@ proc createEdgeToNodeConnectivity { domains } {
 
   return [list $edgeToNode $edgeToNodeHash]
 }
+
 proc createEdgeToCellConnectivity { domains } {
   #puts "Creating edge-to-cell connectivity using: $domains."
+
+  # Create unique edge maps which are needed below.
+  lassign [createEdgeToNodeConnectivity $domains] edgeToNode edgeToNodeHash
+  #puts "edgeToNode: $edgeToNode"
 
   # Using the pwio library internally, this may not be efficient if this is
   # done in many other procedures too.
   pwio::beginIO $domains
 
   set edgeToCell [dict create]
-  set nEdges 0
 
   set cellCount [pwio::getCellCount]
   #puts "\tthere are $cellCount total facets..."
@@ -57,30 +61,31 @@ proc createEdgeToCellConnectivity { domains } {
   # Loop over facets and identify neighbor facets
   for {set f 1} {$f <= $cellCount} {incr f} {
     set facet [pwio::getCell $f]
-    #set edges [pwio::getCellEdges $f]
-    #puts "\t\tfacet $f: $facet has edges: $edges"
-    set minEdges [pwio::getCellEdges $f cellVarName 1 revVarName]
-    #puts "\t\t\facet $f: $facet has (min) edges: $minEdges"
+    # This is in 'min' order to make it easier to identify unique edges.
+    set edges [pwio::getCellEdges $f cellVarName 1 revVarName]
+    #puts "\t\t\facet $f: $facet has (min) edges: $edges"
     #puts "\t\t\tcellVarName: $cellVarName, revVarName: $revVarName"
 
     # Loop over all remaining facets to identify which ones share an edge.
     for {set ff [expr $f + 1]} {$ff <= $cellCount} {incr ff} {
       set facet2 [pwio::getCell $ff]
-      set minEdges2 [pwio::getCellEdges $ff cellVarName 1 revVarName]
+    # This is in 'min' order to make it easier to identify unique edges.
+      set edges2 [pwio::getCellEdges $ff cellVarName 1 revVarName]
 
       # Loop over edges of original facet and compare with edges owned by
       # current facet.
-      foreach edge $minEdges {
+      foreach edge $edges {
         #puts "edge: $edge"
-        foreach edge2 $minEdges2 {
+        set edgeId [dict get $edgeToNodeHash "[lindex $edge 0]-[lindex $edge 1]"]
+        foreach edge2 $edges2 {
+          set edge2Id [dict get $edgeToNodeHash "[lindex $edge2 0]-[lindex $edge2 1]"]
           #puts "edge2: $edge2"
 
-          # There must be a better way to do this.
-          if { [lindex $edge 0] == [lindex $edge2 0] && [lindex $edge 1] == [lindex $edge2 1] } {
+          if { $edgeId == $edge2Id} {
             #puts "Found identical edges..."
+            #puts "\tedgeId: $edgeId and edge2Id: $edge2Id"
             # Build up edge-to-cell connectivity dictionary.
-            dict set edgeToCell $nEdges [list $f $ff]
-            set nEdges [expr $nEdges + 1]
+            dict set edgeToCell $edgeId [list $f $ff]
           }
         }
       }
