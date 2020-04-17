@@ -16,6 +16,68 @@ proc getAveragePoint { points } {
   return [list [pwu::Vector3 x $avg] [pwu::Vector3 y $avg] [pwu::Vector3 z $avg]]
 }
 
+# This is for debugging connectivity mostly.
+proc labelMesh { domains} {
+  puts "Labeling mesh using: $domains."
+
+  # Using the pwio library internally, this may not be efficient if this is
+  # done in many other procedures too.
+  pwio::beginIO $domains
+
+  # Create coordinate/node labels.
+  set coordCount [pwio::getCoordCount]
+  puts "\tthere are $coordCount total coordinates..."
+
+  for {set p 1} {$p <= $coordCount} {incr p} {
+    set coord [pwio::getCoord $p]
+    #puts "coord: $coord"
+    #puts "\tcoordinate $p: [pwio::utils::coordToPtString $coord]"
+    set pt [pw::Grid getPoint $coord]
+    pwio::utils::labelPt $p $pt
+  }
+
+  # Create edge labels.
+  set edgeToNode [dict create]
+  set edgeToNodeHash [dict create]
+
+  # Create edge-to-node connectivity and hash.
+  lassign [createEdgeToNodeConnectivity $domains] edgeToNode edgeToNodeHash
+
+  set edgeCount [dict size $edgeToNode]
+  puts "\tthere are $edgeCount total edges..."
+
+  dict for {edge coodPair} $edgeToNode {
+    set edgePoints [list]
+    foreach p $coodPair {
+      set coord [pwio::getCoord $p]
+      lappend edgePoints [pw::Grid getPoint $coord]
+    }
+    set eAvgPt [getAveragePoint $edgePoints]
+    #puts "\t\taverage point: $eAvgPt"
+    pwio::utils::labelPt $edge $eAvgPt
+  }
+
+  set cellCount [pwio::getCellCount]
+  puts "\tthere are $cellCount total facets..."
+
+  # Create facet labels.
+  for {set f 1} {$f <= $cellCount} {incr f} {
+    #puts "facet $f is a [pwio::getCellType $f]"
+    set facet [pwio::getCell $f]
+    set facetPoints [list]
+    foreach p $facet {
+      set coord [pwio::getCoord $p]
+      lappend facetPoints [pw::Grid getPoint $coord]
+    }
+
+    #puts "\tpoints: $facetPoints"
+    set fAvgPt [getAveragePoint $facetPoints]
+    #puts "\t\taverage point: $fAvgPt"
+    pwio::utils::labelPt $f $fAvgPt
+  }
+
+  pwio::endIO
+}
 
 # This creates both a hash/lookup table and a edge-to-node connectivity for all
 # the edges contained in the domain(s) provided in _facet_ order.
@@ -156,6 +218,8 @@ if { ![pw::Display selectEntities \
 }
 
 puts "Selected $selection(Domains) for use."
+
+labelMesh $selection(Domains)
 
 set edgeToCell [ createEdgeToCellConnectivity $selection(Domains) ]
 
