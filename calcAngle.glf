@@ -168,7 +168,7 @@ proc createEdgeToCellConnectivity { domains } {
     }
   }
 
-  #puts "edgeToCell: $edgeToCell"
+  puts "edgeToCell: $edgeToCell"
 
   pwio::endIO
 
@@ -223,6 +223,10 @@ labelMesh $selection(Domains)
 
 set edgeToCell [ createEdgeToCellConnectivity $selection(Domains) ]
 
-puts "edgeToCell: $edgeToCell"
+#puts "edgeToCell: $edgeToCell"
+
+set cellToCell [ createCellToCellConnectivity $selection(Domains) ]
+
+#puts "cellToCell: $cellToCell"
 
 # vim: set ft=tcl:
