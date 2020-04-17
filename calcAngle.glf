@@ -78,4 +78,9 @@ if { ![pw::Display selectEntities \
 }
 
 puts "Selected $selection(Domains) for use."
+
+set edgeToCell [ createEdgeToCellConnectivity $selection(Domains) ]
+
+puts "edgeToCell: $edgeToCell"
+
 # vim: set ft=tcl:
