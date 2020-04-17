@@ -55,4 +55,27 @@ proc createEdgeToCellConnectivity { domains } {
   return $edgeToCell
 }
 
+# Create a domain selection mask.
+set mask [pw::Display createSelectionMask -requireDomain {}];
+
+#
+# Use selected domain or prompt user for selection if nothing is selected at
+# run time.
+#
+if { !([pw::Display getSelectedEntities -selectionmask $mask selection]) } {
+  # No domain was selected at runtime; prompt for one now.
+
+# Create a domain selection dialog.
+if { ![pw::Display selectEntities \
+       -selectionmask $mask \
+       -description "Select domain(s) to use." \
+     selection] } {
+
+    puts "Error: Unsuccessfully selected domain(s)... exiting"
+    exit
+  }
+
+}
+
+puts "Selected $selection(Domains) for use."
 # vim: set ft=tcl:
