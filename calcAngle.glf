@@ -195,6 +195,29 @@ proc createCellToCellConnectivity { domains } {
   return $cellToCell
 }
 
+proc edgeToVector { edgeToNodeName edge reverse } {
+
+  # This implies that $edgeToNode exists in the callstack/scope of the
+  # procedure that calls this. I do not like TCL, but this seems to be the way
+  # to do this.
+  upvar 1 $edgeToNodeName edgeToNode
+
+  set coord1 [pwio::getCoord [lindex [dict get $edgeToNode $edge] 0]]
+  set coord2 [pwio::getCoord [lindex [dict get $edgeToNode $edge] 1]]
+
+  #puts "coord1: $coord1, coord2: $coord2"
+
+  set xyz1 [pw::Grid getXYZ $coord1]
+  set xyz2 [pw::Grid getXYZ $coord2]
+
+  #puts "xyz1: $xyz1, xyz2: $xyz2"
+
+  set vector [pwu::Vector3 set [expr {[lindex $xyz2 0] - [lindex $xyz1 0]}] [expr {[lindex $xyz2 1] - [lindex $xyz1 1]}] [expr {[lindex $xyz2 2] - [lindex $xyz1 2]}]]
+
+  if { $reverse } { set vector [pwu::Vector3 scale $vector -1.0]}
+
+  return $vector
+}
 # Create a domain selection mask.
 set mask [pw::Display createSelectionMask -requireDomain {}];
 
