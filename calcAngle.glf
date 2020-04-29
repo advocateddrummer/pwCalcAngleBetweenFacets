@@ -331,12 +331,26 @@ puts "Selected $selection(Domains) for use."
 
 labelMesh $selection(Domains)
 
+lassign [ createEdgeToNodeConnectivity $selection(Domains) ] edgeToNode edgeToNodeHash
+
+#puts "edgeToNode: $edgeToNode"
+
 set edgeToCell [ createEdgeToCellConnectivity $selection(Domains) ]
 
 #puts "edgeToCell: $edgeToCell"
 
-set cellToCell [ createCellToCellConnectivity $selection(Domains) ]
+#set cellToCell [ createCellToCellConnectivity $selection(Domains) ]
 
 #puts "cellToCell: $cellToCell"
+
+set edgeCount [dict size $edgeToNode]
+for {set edge 1} {$edge <= $edgeCount} {incr edge} {
+  #puts "\t\tcalling getAngleBetweenFaces on edge $edge"
+  #puts "\t\t\tedgeToNode(edge): [dict get $edgeToNode $edge]"
+  if {[dict exist $edgeToCell $edge]} {
+    #puts "\t\t\tedgeToCell(edge): [dict get $edgeToCell $edge]"
+    getAngleBetweenFaces "edgeToNodeHash" "edgeToNode" "edgeToCell" $edge
+  }
+}
 
 # vim: set ft=tcl:
