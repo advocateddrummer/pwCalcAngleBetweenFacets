@@ -219,6 +219,85 @@ proc edgeToVector { edgeToNodeName edge reverse } {
 
   return $vector
 }
+
+# This procedure accepts as input the common edge between the two facets in
+# question and computes the angle between them.
+proc getAngleBetweenFaces { edgeToNodeHashName edgeToNodeName edgeToCellName commonEdge } {
+
+  # This implies that $edgeToNode, $edgeToCell both exist in the
+  # callstack/scope of the procedure that calls this. I do not like TCL, but
+  # this seems to be the way to do this.
+  upvar 1 $edgeToNodeHashName edgeToNodeHash
+  upvar 1 $edgeToNodeName edgeToNode
+  upvar 1 $edgeToCellName edgeToCell
+
+  set vectorCount 1
+  set vectors [list [edgeToVector $edgeToNodeName $commonEdge 0]]
+
+  # The first coordinate/node of the common edge is used as the base for all
+  # vectors used in the calculation.
+  set anchorCoord [lindex [dict get $edgeToNode $commonEdge] 0]
+
+  set facets [dict get $edgeToCell $commonEdge]
+  #puts "facets: $facets"
+
+  if { [llength $facets] != 2 } {
+    puts "warning: found boundary edge"
+    continue
+  }
+
+  foreach facetIndex $facets {
+    set facet [pwio::getCell $facetIndex]
+    # This is in 'min' order to make it easier to identify unique edges.
+    set edges [pwio::getCellEdges $facetIndex cellVarName 1 revVarName]
+    #puts "facet $facet: edges: $edges"
+    foreach edge $edges {
+      # Create unique edge identifier.
+      set edgeId "[lindex $edge 0]-[lindex $edge 1]"
+      set currentEdge [dict get $edgeToNodeHash $edgeId]
+      #puts "\tfacet: $facet: current edgeId: $edgeId"
+
+      # Make sure this is not the common edge and that it shares the anchor
+      # coordinate/node with the common edge.
+      if { $commonEdge != $currentEdge && \
+           ( $anchorCoord == [lindex [dict get $edgeToNode $currentEdge] 0] || \
+             $anchorCoord == [lindex [dict get $edgeToNode $currentEdge] 1] ) } {
+        set reverse 0
+        if { $anchorCoord == [lindex [dict get $edgeToNode $currentEdge] 1] } { set reverse 1 }
+        #puts "\t\tedge: $currentEdge, reverse: $reverse"
+        lappend vectors [edgeToVector $edgeToNodeName $currentEdge $reverse]
+        incr vectorCount
+      }
+    }
+  }
+
+  #puts "We have $vectorCount vectors: $vectors"
+
+  # Assert that there are only three vectors.
+  pwio::utils::assert "\"3\" == \"[llength $vectors]\"" "Error: incorrect number of vectors"
+
+  # Now, calculate angle between the adjacent faces.
+  set cross1 [pwu::Vector3 cross [lindex $vectors 0] [lindex $vectors 1]]
+  set cross2 [pwu::Vector3 cross [lindex $vectors 0] [lindex $vectors 2]]
+
+  set vector1Len [pwu::Vector3 length $cross1]
+  set vector2Len [pwu::Vector3 length $cross2]
+
+  set dot [pwu::Vector3 dot $cross1 $cross2]
+
+  set arg [expr {$dot/[expr $vector1Len * $vector2Len]}]
+  # Make sure this is in the range of [-1.0, 1.0] so that acos does not fail.
+  set arg [expr {min(max($arg, -1.0), 1.0)}]
+
+  #puts "vector1Len: $vector1Len, vector2Len: $vector2Len"
+  #puts "cross1: $cross1, cross2: $cross2"
+  #puts "dot cross1 x cross2: $dot"
+
+  #set angle [expr 180 * [expr {acos($dot/[expr $vector1Len * $vector2Len])} ]/[expr {atan(1) * 4}]]
+  set angle [expr 180 * [expr {acos($arg)} ]/[expr {atan(1) * 4}]]
+  puts "Angle between edge: $commonEdge and facets: $facets is: $angle"
+}
+
 # Create a domain selection mask.
 set mask [pw::Display createSelectionMask -requireDomain {}];
 
