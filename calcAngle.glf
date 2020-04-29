@@ -11,7 +11,8 @@ proc getAveragePoint { points } {
     set avg [pwu::Vector3 add $avg $pt]
   }
 
-  set avg [pwu::Vector3 scale $avg [expr 1.0/$nPoints]]
+  #set avg [pwu::Vector3 scale $avg [expr 1.0/$nPoints]]
+  set avg [pwu::Vector3 divide $avg $nPoints]
 
   return [list [pwu::Vector3 x $avg] [pwu::Vector3 y $avg] [pwu::Vector3 z $avg]]
 }
