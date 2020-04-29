@@ -1,5 +1,8 @@
 package require PWI_Glyph
 
+# Load math constants for pi
+package require math::constants
+
 set retValue [source [file join [file dirname [info script]] "/Users/ehereth/Projects/Glyph/GridCoordEnum/pwio.glf"]]
 
 # This procedure calculates the average of all points provided to it.
@@ -224,6 +227,9 @@ proc edgeToVector { edgeToNodeName edge reverse } {
 # question and computes the angle between them.
 proc getAngleBetweenFaces { edgeToNodeHashName edgeToNodeName edgeToCellName commonEdge } {
 
+  # Define pi
+  math::constants::constants pi
+
   # This implies that $edgeToNode, $edgeToCell both exist in the
   # callstack/scope of the procedure that calls this. I do not like TCL, but
   # this seems to be the way to do this.
@@ -294,7 +300,8 @@ proc getAngleBetweenFaces { edgeToNodeHashName edgeToNodeName edgeToCellName com
   #puts "dot cross1 x cross2: $dot"
 
   #set angle [expr 180 * [expr {acos($dot/[expr $vector1Len * $vector2Len])} ]/[expr {atan(1) * 4}]]
-  set angle [expr 180 * [expr {acos($arg)} ]/[expr {atan(1) * 4}]]
+  #set angle [expr 180 * [expr {acos($arg)} ]/[expr {atan(1) * 4}]]
+  set angle [expr 180 * [expr {acos($arg)} ]/$pi]
   puts "Angle between edge: $commonEdge and facets: $facets is: $angle"
 }
 
